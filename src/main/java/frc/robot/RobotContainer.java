@@ -25,11 +25,11 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxAngularRate = RotationsPerSecond.of(1.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
-    private SlewRateLimiter xLimiter = new SlewRateLimiter(20.0);
-    private SlewRateLimiter yLimiter = new SlewRateLimiter(20.0);
-    private SlewRateLimiter rotLimiter = new SlewRateLimiter(35.0);
+    private SlewRateLimiter xLimiter = new SlewRateLimiter(50.0);
+    private SlewRateLimiter yLimiter = new SlewRateLimiter(50.0);
+    private SlewRateLimiter rotLimiter = new SlewRateLimiter(36.0);
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -64,21 +64,12 @@ public class RobotContainer {
             drivetrain.applyRequest(() ->
                 drive.withVelocityX(xLimiter.calculate(-MathUtil.applyDeadband(driverController.getLeftY(), 0.1) * MaxSpeed)) // Drive forward with negative Y (forward)
                     .withVelocityY(yLimiter.calculate(-MathUtil.applyDeadband(driverController.getLeftX(), .1) * MaxSpeed)) // Drive left with negative X (left)
-                    .withRotationalRate(rotLimiter.calculate(-MathUtil.applyDeadband(driverController.getRightX(), .1) * MaxAngularRate)) // Drive counterclockwise with negative X (left)
+                    .withRotationalRate(rotLimiter.calculate(-MathUtil.applyDeadband(driverController.getRawAxis(3), .1) * MaxAngularRate)) // Drive counterclockwise with negative X (left)
+                    //.withRotationalRate(rotLimiter.calculate(-MathUtil.applyDeadband(driverController.getRightX(), .1) * MaxAngularRate)) // Drive counterclockwise with negative X (left)
             )
         );
 
-        driverController.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        driverController.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))
-        ));
-
-        driverController.pov(0).whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(0.5).withVelocityY(0))
-        );
-        driverController.pov(180).whileTrue(drivetrain.applyRequest(() ->
-            forwardStraight.withVelocityX(-0.5).withVelocityY(0))
-        );
+        
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -88,7 +79,8 @@ public class RobotContainer {
         //driverController.start().and(driverController.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // reset the field-centric heading on left bumper press
-        driverController.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        driverController.button(7).onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        //driverController.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         //drivetrain.registerTelemetry(logger::telemeterize);
     }
