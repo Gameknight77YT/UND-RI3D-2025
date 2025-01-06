@@ -170,9 +170,13 @@ public class Wrist extends SubsystemBase {
     return Radians.of(encoder.getSelectedSensorPosition() / 4096);
   }
 
+  public void zeroEncoder() {
+    encoder.setSelectedSensorPosition(0);
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    SmartDashboard.putNumber("Encoder", getWristEncoder().in(Degrees));
+    
   }
 }

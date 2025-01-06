@@ -20,12 +20,20 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.ManualElevator;
+import frc.robot.commands.ManualPivot;
+import frc.robot.commands.ManualWrist;
+import frc.robot.commands.PIDElevator;
+import frc.robot.commands.PIDPivot;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Elevator;
+import frc.robot.subsystems.Pivot;
+import frc.robot.subsystems.Wrist;
 
 public class RobotContainer {
     private Elevator elevator = new Elevator();
+    private Pivot pivot = new Pivot();
+    //private Wrist wrist = new Wrist();
 
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(1.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
@@ -69,8 +77,14 @@ public class RobotContainer {
             )
         );
 
-        elevator.setDefaultCommand(new ManualElevator(elevator, () -> manipulatorController.getLeftY()));
+        elevator.setDefaultCommand(new ManualElevator(elevator, () -> -manipulatorController.getLeftY()));
+        pivot.setDefaultCommand(new ManualPivot(pivot, () -> -manipulatorController.getRawAxis(4)));
+        manipulatorController.button(2).whileTrue(new PIDPivot(pivot, -45));
+        
+        manipulatorController.button(5).whileTrue(new PIDElevator(elevator, 15000));
+        //wrist.setDefaultCommand(new ManualWrist(wrist, () -> manipulatorController.getLeftX()));
 
+        manipulatorController.button(7).onTrue(elevator.runOnce(() -> elevator.zeroEncoder()));
         
 
         // Run SysId routines when holding back/start and X/Y.

@@ -26,10 +26,8 @@ public class Elevator extends SubsystemBase {
 
 
   private TalonFX elevatorMotor = new TalonFX(Constants.elevatorMotorID);
-  private TalonFX elevatorFollower = new TalonFX(Constants.elevatorFollowerID);
 
-  private TalonFXConfiguration elevatorCfg;
-
+  private TalonFXConfiguration elevatorCfg = new TalonFXConfiguration();
 
   private DigitalInput toplimitSwitch = new DigitalInput(Constants.toplimitSwitchID);
   private DigitalInput bottomlimitSwitch = new DigitalInput(Constants.bottomlimitSwitchID);
@@ -37,9 +35,7 @@ public class Elevator extends SubsystemBase {
 
   private double PIDSpeed = 0;
 
-  private final CANcoder mEncoder = new CANcoder(Constants.elevatorCANcoderID);
-
-  private double kP = 0.028; 
+  private double kP = 0.0001; 
   private double kI = 0.0;
   private double kD = 0.0;
 
@@ -54,18 +50,12 @@ public class Elevator extends SubsystemBase {
     elevatorCfg.OpenLoopRamps.DutyCycleOpenLoopRampPeriod = 0.3;
 
     elevatorCfg.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    elevatorCfg.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-
-
+    elevatorCfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
     elevatorMotor.getConfigurator().apply(elevatorCfg);
-    elevatorFollower.getConfigurator().apply(elevatorCfg);
-
 
     elevatorMotor.clearStickyFaults(10);
-    elevatorFollower.clearStickyFaults(10);
 
-    elevatorFollower.setControl(new StrictFollower(elevatorMotor.getDeviceID()));
     
 
   }
@@ -78,13 +68,14 @@ public class Elevator extends SubsystemBase {
     
     //double curveValue = 1;
 
+    
     double lowerError = Constants.lowerElevatorPosLimit - GetEncoderPosition();
     double upperError = Constants.upperElevatorPosLimit - GetEncoderPosition();
 
-    double lowerErrorSpeed = lowerError * 0.025;
-    double upperErrorSpeed = upperError * 0.025;
+    double lowerErrorSpeed = lowerError * 0.0001;
+    double upperErrorSpeed = upperError * 0.0001;
 
-    SmartDashboard.putNumber("elevator: Encoder position", GetEncoderPosition());
+    
 
     // SmartDashboard.putNumber("lowerError", lowerError);
     // SmartDashboard.putNumber("upperError", upperError);
@@ -103,13 +94,13 @@ public class Elevator extends SubsystemBase {
       }
     }   
 
-    if (speed < 0 && !GetBottomLimitSwitch()){
-      speed = 0;
-    }
+    // if (speed < 0 && !GetBottomLimitSwitch()){
+    //   speed = 0;
+    // }
 
-    if (speed > 0 && !GetTopLimitSwitch()){
-      speed = 0;
-    }
+    // if (speed > 0 && !GetTopLimitSwitch()){
+    //   speed = 0;
+    // }
 
     SmartDashboard.putNumber("CommandedElevatorSpeed", speed);
 
@@ -128,6 +119,7 @@ public class Elevator extends SubsystemBase {
     // if((p != kP)) { mPID.setP(p); kP = p; }
     // if((i != kI)) { mPID.setI(i); kI = i; }
     // if((d != kD)) { mPID.setD(d); kD = d; }
+    
 
     elevatorMotor.set(speed);
 
@@ -165,8 +157,8 @@ public class Elevator extends SubsystemBase {
     double lowerError = Constants.lowerElevatorPosLimit - GetEncoderPosition();
     double upperError = Constants.upperElevatorPosLimit - GetEncoderPosition();
 
-    double lowerErrorSpeed = lowerError * 0.025;
-    double upperErrorSpeed = upperError * 0.025;
+    double lowerErrorSpeed = lowerError * 0.0001;
+    double upperErrorSpeed = upperError * 0.0001;
 
 
 
@@ -183,13 +175,13 @@ public class Elevator extends SubsystemBase {
     }   
 
 
-    if (PIDSpeed < 0 && !GetBottomLimitSwitch()){
-      PIDSpeed = 0;
-    }
+    // if (PIDSpeed < 0 && !GetBottomLimitSwitch()){
+    //   PIDSpeed = 0;
+    // }
 
-    if (PIDSpeed > 0 && !GetTopLimitSwitch()){
-      PIDSpeed = 0;
-    }
+    // if (PIDSpeed > 0 && !GetTopLimitSwitch()){
+    //   PIDSpeed = 0;
+    // }
 
     // if (PIDSpeed > 0.2){
     //   PIDSpeed = 0.2;
@@ -214,8 +206,7 @@ public class Elevator extends SubsystemBase {
   
 
   public double GetEncoderPosition(){
-    // position = mEncoder.getAbsolutePosition();
-    var position = mEncoder.getAbsolutePosition();
+    var position = elevatorMotor.getPosition();
     double adjustedPos = (position.getValueAsDouble() * 360.0) + 79.7167;
     SmartDashboard.putNumber("elevator position", adjustedPos);
     
@@ -238,9 +229,14 @@ public class Elevator extends SubsystemBase {
     return bottomlimitSwitch.get();
   }
 
+  public void zeroEncoder() {
+    elevatorMotor.setPosition(0);
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    GetEncoderPosition();
     SmartDashboard.putBoolean("upper limit switch", GetTopLimitSwitch());
     SmartDashboard.putBoolean("lower limit switch", GetBottomLimitSwitch());
   }

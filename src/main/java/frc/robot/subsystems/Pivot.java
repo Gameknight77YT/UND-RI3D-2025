@@ -25,17 +25,14 @@ import frc.robot.MiniPID;
 
 public class Pivot extends SubsystemBase {
 
-  private TalonFX pivotMotor = new TalonFX(Constants.pivotMotorID);
-  private  TalonFX pivotFollower = new TalonFX(Constants.elevatorFollowerID);
+  private TalonFX pivotMotor    = new TalonFX(Constants.pivotMotorID);
+  private TalonFX pivotFollower = new TalonFX(Constants.pivotFollowerID);
 
-  private TalonFXConfiguration pivotCfg;
-
-  private DigitalInput frontlimitSwitch = new DigitalInput(Constants.frontlimitSwitchID);
-  private DigitalInput backlimitSwitch = new DigitalInput(Constants.backlimitSwitchID);
+  private TalonFXConfiguration pivotCfg = new TalonFXConfiguration();
 
   private double PIDSpeed = 0;
 
-  private double kP = 0.028; 
+  private double kP = 0.06; 
   private double kI = 0.0;
   private double kD = 0.0;
 
@@ -61,7 +58,9 @@ public class Pivot extends SubsystemBase {
     pivotMotor.clearStickyFaults(10);
     pivotFollower.clearStickyFaults(10);
 
-    pivotFollower.setControl(new Follower(pivotMotor.getDeviceID(), false));
+    pivotFollower.setControl(new Follower(pivotMotor.getDeviceID(), true));
+
+    pivotEncoder.setInverted(true);
   }
 
   public void ManualMovePivot(double speed) {
@@ -75,10 +74,10 @@ public class Pivot extends SubsystemBase {
     double lowerError = Constants.backPivotPosLimit - GetEncoderPosition();
     double upperError = Constants.forwardPivotPosLimit - GetEncoderPosition();
 
-    double lowerErrorSpeed = lowerError * 0.025;
-    double upperErrorSpeed = upperError * 0.025;
+    double lowerErrorSpeed = lowerError * 0.05;
+    double upperErrorSpeed = upperError * 0.05;
 
-    SmartDashboard.putNumber("Pivot: Encoder position", GetEncoderPosition());
+    
 
     // SmartDashboard.putNumber("lowerError", lowerError);
     // SmartDashboard.putNumber("upperError", upperError);
@@ -97,14 +96,6 @@ public class Pivot extends SubsystemBase {
       }
     }   
 
-    if (speed < 0 && !GetBottomLimitSwitch()){
-      speed = 0;
-    }
-
-    if (speed > 0 && !GetTopLimitSwitch()){
-      speed = 0;
-    }
-
     SmartDashboard.putNumber("CommandedPivotSpeed", speed);
 
     if (speed > Constants.maxManualArmSpeed){
@@ -122,6 +113,7 @@ public class Pivot extends SubsystemBase {
     // if((p != kP)) { mPID.setP(p); kP = p; }
     // if((i != kI)) { mPID.setI(i); kI = i; }
     // if((d != kD)) { mPID.setD(d); kD = d; }
+    
 
     pivotMotor.set(speed);
 
@@ -159,8 +151,8 @@ public class Pivot extends SubsystemBase {
     double lowerError = Constants.backPivotPosLimit - GetEncoderPosition();
     double upperError = Constants.forwardPivotPosLimit - GetEncoderPosition();
 
-    double lowerErrorSpeed = lowerError * 0.025;
-    double upperErrorSpeed = upperError * 0.025;
+    double lowerErrorSpeed = lowerError *0.05;
+    double upperErrorSpeed = upperError * 0.05;
 
 
 
@@ -176,14 +168,6 @@ public class Pivot extends SubsystemBase {
       }
     }   
 
-
-    if (PIDSpeed < 0 && !GetBottomLimitSwitch()){
-      PIDSpeed = 0;
-    }
-
-    if (PIDSpeed > 0 && !GetTopLimitSwitch()){
-      PIDSpeed = 0;
-    }
 
     // if (PIDSpeed > 0.2){
     //   PIDSpeed = 0.2;
@@ -210,7 +194,7 @@ public class Pivot extends SubsystemBase {
   public double GetEncoderPosition(){
     // position = mEncoder.getAbsolutePosition();
     double position = pivotEncoder.get();
-    double adjustedPos = (position * 360.0) + 79.7167;//TODO
+    double adjustedPos = (position * 360.0)-220;//TODO
     SmartDashboard.putNumber("pivot position", adjustedPos);
     
     return adjustedPos;
@@ -224,16 +208,11 @@ public class Pivot extends SubsystemBase {
     return false;
   }
 
-  public boolean GetTopLimitSwitch(){
-    return frontlimitSwitch.get();
-  }
-
-  public boolean GetBottomLimitSwitch(){
-    return backlimitSwitch.get();
-  }
+  
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    GetEncoderPosition();
   }
 }
