@@ -32,7 +32,7 @@ public class Pivot extends SubsystemBase {
 
   private double PIDSpeed = 0;
 
-  private double kP = 0.06; 
+  private double kP = 0.04; 
   private double kI = 0.0;
   private double kD = 0.0;
 
@@ -43,7 +43,7 @@ public class Pivot extends SubsystemBase {
   /** Creates a new pivot. */
   public Pivot() {
 
-    pivotEncoder.setInverted(false);
+    pivotEncoder.setInverted(true);
 
     pivotCfg.CurrentLimits.SupplyCurrentLimit = 40;
     pivotCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
@@ -60,7 +60,6 @@ public class Pivot extends SubsystemBase {
 
     pivotFollower.setControl(new Follower(pivotMotor.getDeviceID(), true));
 
-    pivotEncoder.setInverted(true);
   }
 
   public void ManualMovePivot(double speed) {

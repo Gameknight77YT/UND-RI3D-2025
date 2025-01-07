@@ -17,14 +17,19 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.commands.Intake;
 import frc.robot.commands.ManualElevator;
 import frc.robot.commands.ManualPivot;
 import frc.robot.commands.ManualWrist;
+import frc.robot.commands.Outtake;
 import frc.robot.commands.PIDElevator;
 import frc.robot.commands.PIDPivot;
+import frc.robot.commands.PIDWrist;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Claw;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Pivot;
@@ -33,13 +38,14 @@ import frc.robot.subsystems.Wrist;
 public class RobotContainer {
     private Elevator elevator = new Elevator();
     private Pivot pivot = new Pivot();
-    //private Wrist wrist = new Wrist();
+    private Wrist wrist = new Wrist();
+    private Claw claw = new Claw();
 
-    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond)/3; // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(1.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
-    private SlewRateLimiter xLimiter = new SlewRateLimiter(50.0);
-    private SlewRateLimiter yLimiter = new SlewRateLimiter(50.0);
+    private SlewRateLimiter xLimiter = new SlewRateLimiter(40.0);
+    private SlewRateLimiter yLimiter = new SlewRateLimiter(40.0);
     private SlewRateLimiter rotLimiter = new SlewRateLimiter(36.0);
 
     /* Setting up bindings for necessary control of the swerve drive platform */
@@ -70,21 +76,90 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(xLimiter.calculate(-MathUtil.applyDeadband(driverController.getLeftY(), 0.1) * MaxSpeed)) // Drive forward with negative Y (forward)
-                    .withVelocityY(yLimiter.calculate(-MathUtil.applyDeadband(driverController.getLeftX(), .1) * MaxSpeed)) // Drive left with negative X (left)
-                    .withRotationalRate(rotLimiter.calculate(-MathUtil.applyDeadband(driverController.getRawAxis(3), .1) * MaxAngularRate)) // Drive counterclockwise with negative X (left)
-                    //.withRotationalRate(rotLimiter.calculate(-MathUtil.applyDeadband(driverController.getRightX(), .1) * MaxAngularRate)) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(xLimiter.calculate(-Math.pow(MathUtil.applyDeadband(driverController.getLeftY(), 0.05),3) * MaxSpeed)) // Drive forward with negative Y (forward)
+                    .withVelocityY(yLimiter.calculate(-Math.pow(MathUtil.applyDeadband(driverController.getLeftX(), .05),3) * MaxSpeed)) // Drive left with negative X (left)
+                    //.withRotationalRate(rotLimiter.calculate(-MathUtil.applyDeadband(driverController.getRawAxis(3), .05) * MaxAngularRate)) // Drive counterclockwise with negative X (left)
+                    .withRotationalRate(rotLimiter.calculate(-Math.pow(MathUtil.applyDeadband(driverController.getRightX(), .05),3) * MaxAngularRate)) // Drive counterclockwise with negative X (left)
             )
         );
 
+        //elevator
         elevator.setDefaultCommand(new ManualElevator(elevator, () -> -manipulatorController.getLeftY()));
-        pivot.setDefaultCommand(new ManualPivot(pivot, () -> -manipulatorController.getRawAxis(4)));
-        manipulatorController.button(2).whileTrue(new PIDPivot(pivot, -45));
-        
-        manipulatorController.button(5).whileTrue(new PIDElevator(elevator, 15000));
-        //wrist.setDefaultCommand(new ManualWrist(wrist, () -> manipulatorController.getLeftX()));
+        //manipulatorController.button(5).whileTrue(new PIDElevator(elevator, 15000)); // y
+        //manipulatorController.button(7).onTrue(elevator.runOnce(() -> elevator.zeroEncoder()));//left bumper
 
-        manipulatorController.button(7).onTrue(elevator.runOnce(() -> elevator.zeroEncoder()));
+        //pivot
+        pivot.setDefaultCommand(new ManualPivot(pivot, () -> -manipulatorController.getRawAxis(4)));//right y
+        //manipulatorController.button(2).whileTrue(new PIDPivot(pivot, -45)); // b
+
+        //wrist
+        wrist.setDefaultCommand(new ManualWrist(wrist, () -> -manipulatorController.getRawAxis(3)));
+        //manipulatorController.povUp().whileTrue(new ManualWrist(wrist, () -> (Constants.wristSpeed)));
+        //manipulatorController.povDown().whileTrue(new ManualWrist(wrist, () -> (-Constants.wristSpeed)));
+        //manipulatorController.button(1).whileTrue(new PIDWrist(wrist, -60));// a
+        
+        //claw
+        manipulatorController.button(10).whileTrue(new Intake(claw));//right trigger
+        manipulatorController.button(8).whileTrue(new Outtake(claw));//right bumper
+        
+        //combination
+        manipulatorController.button(1).whileTrue( // a  -  zero
+            new PIDElevator(elevator, Constants.lowerElevatorPosLimit)
+            .alongWith(new PIDPivot(pivot, 0))
+            .alongWith(new PIDWrist(wrist, 0))
+            );
+
+        manipulatorController.povLeft().whileTrue(  //coral human player station
+            new PIDElevator(elevator, Constants.elevatorMotorID)
+            .alongWith(new PIDPivot(pivot, -52))
+            .alongWith(new PIDWrist(wrist, -85))
+            );
+        
+        manipulatorController.button(7).whileTrue( //left bumper  -  upper alge reef pickup
+            new PIDElevator(elevator, 9300)
+            .alongWith(new PIDPivot(pivot, -28))
+            .alongWith(new PIDWrist(wrist, 0))
+            );
+
+        manipulatorController.button(9).whileTrue( //left trigger  -  lower alge reef pickup
+            new PIDElevator(elevator, 203) 
+            .alongWith(new PIDPivot(pivot, -37))
+            .alongWith(new PIDWrist(wrist, 3.5))
+            );
+        
+        manipulatorController.povDown().whileTrue( //L1 reef
+            new PIDElevator(elevator, Constants.lowerElevatorPosLimit) 
+            .alongWith(new PIDPivot(pivot, -85))
+            .alongWith(new PIDWrist(wrist, -82))
+            );
+
+        manipulatorController.povRight().whileTrue( //L2 reef
+            new PIDElevator(elevator, Constants.lowerElevatorPosLimit) 
+            .alongWith(new PIDPivot(pivot, -75))
+            .alongWith(new PIDWrist(wrist, -72))
+            );
+
+        manipulatorController.povUp().whileTrue( //L3 reef
+            new PIDElevator(elevator, 4700) 
+            .alongWith(new PIDPivot(pivot, 14))
+            .alongWith(new PIDWrist(wrist, -16))
+            );
+
+        manipulatorController.button(5).whileTrue( //y  - L4 reef
+            new PIDElevator(elevator, Constants.upperElevatorPosLimit) 
+            .alongWith(new PIDPivot(pivot, 5))
+            .alongWith(new PIDWrist(wrist, -38))
+            );
+
+        
+        
+        
+        /*manipulatorController.button(0).whileTrue(
+            new PIDElevator(elevator, 0)
+            .alongWith(new PIDPivot(pivot, 0))
+            .alongWith(new PIDWrist(wrist, 0))
+            );
+        */
         
 
         // Run SysId routines when holding back/start and X/Y.
@@ -95,8 +170,8 @@ public class RobotContainer {
         //driverController.start().and(driverController.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // reset the field-centric heading on left bumper press
-        driverController.button(7).onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
-        //driverController.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        //driverController.button(7).onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        driverController.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         //drivetrain.registerTelemetry(logger::telemeterize);
     }

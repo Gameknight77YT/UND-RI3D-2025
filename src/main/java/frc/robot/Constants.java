@@ -21,23 +21,21 @@ public final class Constants {
   public static final int pivotFollowerID    = 16;
   public static final int clawMotorID        = 17;
   public static final int wristMotorID       = 18;
-  public static final int wristEncoderID     = 19;
 
   //DIO
   public static final int pivotEncoderID      = 0;
-  public static final int frontlimitSwitchID  = 1;
-  public static final int backlimitSwitchID   = 2;
-  public static final int bottomlimitSwitchID = 3;
-  public static final int toplimitSwitchID    = 4;
+  public static final int wristEncoderID      = 1;
   
-  public static final double clawSpeed = .75;
-  public static final double maxManualArmSpeed = .5;
+  //speeds
+  public static final double wristSpeed        = .35;
+  public static final double clawSpeed         = .50;
+  public static final double maxManualArmSpeed = .50;
 
   //TODO limits
   public static final double upperElevatorPosLimit = 35000; //35000
   public static final double lowerElevatorPosLimit = 100; //100
-  public static final double forwardPivotPosLimit = 90;
-  public static final double backPivotPosLimit = -90;
-  public static final double backWristPosLimit = 0;
-  public static final double forwardWristPosLimit = 0;
+  public static final double forwardPivotPosLimit = 105;//90
+  public static final double backPivotPosLimit = -105;//-90
+  public static final double backWristPosLimit = -85;//-85
+  public static final double forwardWristPosLimit = 100;//100
 }

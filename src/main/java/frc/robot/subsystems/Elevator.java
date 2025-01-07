@@ -29,8 +29,8 @@ public class Elevator extends SubsystemBase {
 
   private TalonFXConfiguration elevatorCfg = new TalonFXConfiguration();
 
-  private DigitalInput toplimitSwitch = new DigitalInput(Constants.toplimitSwitchID);
-  private DigitalInput bottomlimitSwitch = new DigitalInput(Constants.bottomlimitSwitchID);
+  //private DigitalInput toplimitSwitch = new DigitalInput(Constants.toplimitSwitchID);
+  //private DigitalInput bottomlimitSwitch = new DigitalInput(Constants.bottomlimitSwitchID);
 
 
   private double PIDSpeed = 0;
@@ -221,14 +221,6 @@ public class Elevator extends SubsystemBase {
     return false;
   }
 
-  public boolean GetTopLimitSwitch(){
-    return toplimitSwitch.get();
-  }
-
-  public boolean GetBottomLimitSwitch(){
-    return bottomlimitSwitch.get();
-  }
-
   public void zeroEncoder() {
     elevatorMotor.setPosition(0);
   }
@@ -237,7 +229,6 @@ public class Elevator extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     GetEncoderPosition();
-    SmartDashboard.putBoolean("upper limit switch", GetTopLimitSwitch());
-    SmartDashboard.putBoolean("lower limit switch", GetBottomLimitSwitch());
+    
   }
 }

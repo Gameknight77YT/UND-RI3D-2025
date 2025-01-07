@@ -12,6 +12,8 @@ public class ManualElevator extends Command {
   //private final CommandJoystick mJoystick;
   private DoubleSupplier speed;
 
+  private double lastPos;
+
   public ManualElevator(Elevator elevator, DoubleSupplier speed) {
     this.elevator = elevator;
     //mJoystick = joystick;
@@ -23,21 +25,29 @@ public class ManualElevator extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-
+    lastPos = elevator.GetEncoderPosition();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    //double speed = mJoystick.getY();
+    if(Math.abs(lastPos - elevator.GetEncoderPosition()) > 500) {
+      lastPos = elevator.GetEncoderPosition();
+    }
 
-    elevator.ManualMoveElevator(speed.getAsDouble());
+    if(Math.abs(speed.getAsDouble()) > .05) {
+      elevator.ManualMoveElevator(speed.getAsDouble());
+    } else {
+      elevator.PIDMoveElevator(lastPos);
+    }
 
   }
 
   // Called once the command ends or is interrupted.
   @Override
-  public void end(boolean interrupted) {}
+  public void end(boolean interrupted) {
+    elevator.ManualMoveElevator(0);
+  }
 
   // Returns true when the command should end.
   @Override
